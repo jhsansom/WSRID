@@ -29,11 +29,11 @@ class LLM:
 
             outputs = self.model(id_list)
             logits = outputs.logits
-        return logits[0, -1, :]
+        return logits
 
     # Returns a probability distribution given logits
     def logits_to_probs(self, logits, temp=1):
-        return torch.nn.functional.softmax(logits/temp)
+        return torch.nn.functional.softmax(logits/temp, dim=-1)
 
     def decode(self, probs, top_k=-1):
         if top_k > 0:
