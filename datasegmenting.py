@@ -9,63 +9,42 @@ from torch import optim
 from torch.nn.utils.rnn import pad_sequence
 from torch.utils.data import Dataset, DataLoader
 import numpy as np
+from nltk import sent_tokenize
 
 class CreateDataset(Dataset):
-    def __init__(self, training_file):
-        lol = ' '
-        x = []
-        y = []
+
+    def __init__(self, training_file, init_sent):
         myfile = open('sometext.txt', "r")
         everything = myfile.read()
-        sentences = everything.split("\n\n")
-        print(sentences)
-        sentences = sentences[:-1]  # remove last line with nothing in it
-        #a, b = sentences[0].split('. ', 1)
-        #print(b)
-        for i in sentences:
-            i = i + lol
-            a, b = i.split('. ', 1)
-            x.append(a)
-            y.append(b)
+        abstracts = everything.split("\n\n")
 
-        dictx = {'<PAD>': 0}
-        dicty = {'<PAD>': 0}
-        counterx = 1
-        countery = 1
+        abstracts = abstracts[:-1]  # remove last line with nothing in it
 
-        for i in range(len(x)):
-            for j in range(len(x[i])):
-                dictx[x[i][j]] = counterx
-                counterx += 1
-
-        self.x = [torch.tensor([dictx[word] for word in sentence]) for sentence in x]
-
-        for i in range(len(y)):
-            for j in range(len(y[i])):
-                dicty[y[i][j]] = countery
-                countery += 1
-
-        self.y = [torch.tensor([dicty[word] for word in sentence]) for sentence in y]
-
-
-        #    for i in range(len(x)):
-        #        for j in range(len(x[i])):
-        #            if countwords[x[i][j]] < 4:
-        #                x[i][j] = 'UNKA'
-
-        self.dictx = dictx
-        self.dicty = dicty
-        self.totalabstracts = len(dictx.keys())
+        self.data = []
+        for abstract in abstracts:
+            sentences = sent_tokenize(abstract)
+            if len(sentences) >= 3:
+                prompt = init_sent + ' ' + sentences[0]
+                rest = ' '.join(sentences[1:])
+                datapoint = {
+                    'prompt' : prompt,
+                    'rest' : rest
+                }
+                self.data.append(datapoint)
 
     def __len__(self):
-        return len(self.x)
+        return len(self.data)
 
     def __getitem__(self, idx):
-        return self.x[idx], self.y[idx]
+        return self.data[idx]
 
-def main():
+if __name__ == '__main__':
     assert os.path.isfile('sometext.txt'), "Training file does not exist"
-    print(CreateDataset('sometext.txt'))
-    #print(train('/Users/daniel/week09/12/EECS595HW3/wsj1-18.training'))
+    init_sent = 'The following sentences are taken from the abstract of a scientific paper.'
+    dataset = CreateDataset('sometext.txt', init_sent)
 
-main()
+    # Print the first three datapoints for testing purposes
+    for i, dp in enumerate(dataset):
+        print(dp)
+        if i > 3:
+            raise Exception
