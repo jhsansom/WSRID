@@ -19,15 +19,16 @@ class WatermarkedLLM:
     def apply_watermark(self, probs):
         return ((1 - self.alpha) * probs) + (self.alpha * self.watermark)
 
-    def autoregress_ids(self, input_ids, gen_len=20):
+    def autoregress_ids(self, input_ids, gen_len=20, with_watermark=True):
         for i in range(gen_len):
             logits = self.llm.get_logits(input_ids)[0, -1, :]
             probs = self.llm.logits_to_probs(logits)
-            probs = self.apply_watermark(probs)
+            if with_watermark:
+                probs = self.apply_watermark(probs)
             out_id = self.llm.decode(probs)
 
             token = self.llm.tokenizer.decode(out_id)
-            print(f'Output at step {i} is {out_id}: {token}')
+            #print(f'Output at step {i} is {out_id}: {token}')
 
             input_ids = torch.cat((input_ids, out_id.unsqueeze(0)))
 
@@ -53,6 +54,7 @@ class WatermarkedLLM:
 if __name__ == '__main__':
     model_name = 'huggyllama/llama-7b'
     #model_name = 'HuggingFaceH4/tiny-random-LlamaForCausalLM'
+    model_name = 'openai-community/gpt2'
     llm = llms.LLM(model_name)
 
     SEED = 12345

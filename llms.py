@@ -13,6 +13,10 @@ class LLM:
 
     def tokenlist_to_str(self, token_list):
         return self.tokenizer.convert_tokens_to_string(token_list)
+    
+    def str_to_idlist(self, input_str):
+        token_list = self.str_to_tokenlist(input_str)
+        return self.tokenlist_to_idlist(token_list)
 
     def tokenlist_to_idlist(self, token_list):
         return torch.tensor(self.tokenizer.convert_tokens_to_ids(token_list))
