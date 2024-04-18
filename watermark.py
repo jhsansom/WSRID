@@ -6,7 +6,7 @@ class WatermarkedLLM:
 
     def __init__(self, llm, seed):
         self.llm = llm
-        self.alpha = 0.05 # Relative proportion of watermark in overall prob
+        self.alpha = 0.15 # Relative proportion of watermark in overall prob
 
         self.generate_watermark(seed)
 

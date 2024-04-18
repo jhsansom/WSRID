@@ -4,9 +4,9 @@ from llms import LLM
 import random
 
 # Hyperparameters
-NUM_TRIALS = 5
-#MODEL_NAME = 'openai-community/gpt2'
-MODEL_NAME = 'HuggingFaceH4/tiny-random-LlamaForCausalLM'
+NUM_TRIALS = 3
+MODEL_NAME = 'openai-community/gpt2'
+#MODEL_NAME = 'HuggingFaceH4/tiny-random-LlamaForCausalLM'
 INIT_SENT = 'The following sentences are taken from the abstract of a scientific paper.'
 
 human_evals = []
@@ -38,25 +38,25 @@ for i in range(NUM_TRIALS):
 
         # Generate watermarked text
         id_list = llm.llm.str_to_idlist(prompt)
-        marked_text = llm.autoregress_ids(id_list, gen_len=50, with_watermark=True)
-        unmarked_text = llm.autoregress_ids(id_list, gen_len=50, with_watermark=False)
+        marked_text = llm.autoregress_ids(id_list, gen_len=25, with_watermark=True)
+        unmarked_text = llm.autoregress_ids(id_list, gen_len=25, with_watermark=False)
 
         # Test whether our model classifies watermarked text properly
-        marked_logprob = llm.eval_log_prob(marked_text)
-        unmarked_logprob = llm.eval_log_prob(marked_text, with_watermark=False)
-        marked_eval = (unmarked_logprob < marked_logprob)
+        marked_text_produced = marked_text[len(id_list):]
+        marked_logprob = llm.eval_log_prob(marked_text_produced)
+        unmarked_logprob = llm.eval_log_prob(marked_text_produced, with_watermark=False)
+        marked_eval = (unmarked_logprob > marked_logprob)
         marked_evals.append(marked_eval)
 
         # Test whether our model classifies non-watermarked text properly
-        marked_logprob = llm.eval_log_prob(unmarked_text)
-        unmarked_logprob = llm.eval_log_prob(unmarked_text, with_watermark=False)
-        unmarked_eval = (unmarked_logprob > marked_logprob)
+        unmarked_text_produced = unmarked_text[len(id_list):]
+        marked_logprob = llm.eval_log_prob(unmarked_text_produced)
+        unmarked_logprob = llm.eval_log_prob(unmarked_text_produced, with_watermark=False)
+        unmarked_eval = (unmarked_logprob < marked_logprob)
         unmarked_evals.append(unmarked_eval)
 
         # Print out results
-        print(f'Iteration {j+1}/{dataset_len}: Human: {human_eval}, Marked: {marked_eval}, Unmarked: {unmarked_eval}')
-
-        if j > 3: break
+        print(f'Iteration {j+1}/{dataset_len}: Human: {human_eval}, Marked: {marked_eval}, Unmarked: {unmarked_eval}', flush=True)
 
     human_correct = sum(human_evals)/len(human_evals)*100
     marked_correct = sum(marked_evals)/len(marked_evals)*100
